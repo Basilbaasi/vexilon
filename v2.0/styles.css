@@ -1,0 +1,58 @@
+#my-floating-ui {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 250px;
+  background: #1e1e1e;
+  color: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  z-index: 9999;
+  font-family: sans-serif;
+}
+
+#jarvis-icon {
+  width: 30px !important;
+  height: 16px !important;
+  margin-right: 8px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+
+#my-floating-ui .chat-header {
+  font-size: 16px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+#chat-input {
+  width: 100%;
+  border: none;
+  resize: none;
+  padding: 8px;
+  margin-bottom: 8px;
+  border-radius: 5px;
+  font-family: inherit;
+}
+
+#chat-send {
+  width: 100%;
+  padding: 8px;
+  background: #4caf50;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#chat-send:hover {
+  background: #45a049;
+}
+
+#chat-response {
+  margin-top: 10px;
+  font-size: 14px;
+}

@@ -1,78 +1,89 @@
-# Vexilon AI Browser Extension
 
-A local AI assistant that runs in Chrome/Edge using your Flask backend.
+# Vexilon – v1 (API-based Chrome Assistant)
 
-## Quick Start Guide
+This is version **v1** of the Vexilon project. It connects a Chrome extension to a remote AI backend using a simple Flask API, mimicking OpenAI's chat completions format.
 
-### 1. Start the AI Server
+---
+
+## 🧠 Features
+
+- 🌐 Works with any API endpoint (e.g., OpenAI, custom proxy)
+- 🧩 Chrome extension for user interaction
+- 🔁 Flask backend to handle `/process` requests
+- 🤖 Assistant named **Jarvis**
+
+---
+
+## 📁 Folder Structure
+
+```
+v1/
+├── PY/
+│   └── server.py          # Flask backend script
+│   └── test.py            # Test script
+├── content.js             # Extension content script
+├── icon.png               # Icon for extension
+├── manifest.json          # Chrome extension setup
+├── popup.html             # Popup chat interface
+├── popup.js               # JS logic for UI
+├── styles.css             # Styling
+├── requirements.txt       # Python dependencies
+└── README.md              # This documentation file
+```
+
+---
+
+## 🚀 How to Use
+
+### 🖥️ 1. Run Flask Backend
+
+Install dependencies and start server:
+
 ```bash
-python server.py //in py folder
-```
-*Keep this terminal window open - the server must stay running.*
-
-### 2. Load the Extension
-
-**In Chrome/Edge:**
-1. Type this in your address bar:
-   ```
-   chrome://extensions/  (Chrome)
-   edge://extensions/    (Edge)
-   ```
-2. Enable **Developer Mode** (toggle in top-right)
-3. Click **"Load unpacked"**
-4. Select the folder containing your extension files
-
-### 3. Start Chatting
-1. Look for the <img src="https://via.placeholder.com/20" width="20" height="20"> Vexilon icon in your browser toolbar
-2. Click it to open the chat window
-3. Type your message and press Enter
-
-## Troubleshooting
-
-🔴 **Extension not loading?**
-- Make sure you selected the folder containing `manifest.json`
-- Check for errors in Developer Tools (Ctrl+Shift+I)
-
-🔴 **Not getting responses?**
-- Verify the Flask server is running (you should see activity in the terminal)
-- Try accessing http://localhost:5000 directly in your browser
-
-## Alternative Testing Methods
-
-**Quick API Test:**
-```javascript
-// Paste in browser console
-fetch('http://localhost:5000/process', {
-  method: 'POST',
-  headers: {'Content-Type': 'application/json'},
-  body: JSON.stringify({message: "Hello AI!"})
-}).then(r => r.json()).then(console.log)
+pip install -r requirements.txt
+python PY/server.py
 ```
 
-**Bookmarklet (no extension needed):**
-1. Create a new bookmark with this URL:
-   ```
-   javascript:(function(){prompt('AI Response:',(await(await fetch('http://localhost:5000/process',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:prompt('Your message:')})).json()).response)})()
-   ```
-2. Click the bookmark to chat
+> You can customize `server.py` to connect to any AI API, including OpenAI or a mock service.
 
-## Files Required
+---
+
+### 🌐 2. Load Chrome Extension
+
+1. Go to `chrome://extensions/`
+2. Enable **Developer Mode**
+3. Click **Load unpacked**
+4. Select the `v1/` folder
+
+---
+
+## 🧪 Example: Flask API Server (server.py)
+
+```python
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+
+@app.route("/process", methods=["POST"])
+def process():
+    data = request.get_json()
+    message = data.get("message", "")
+    reply = f"Echo from Jarvis: {message}"
+    return jsonify({"response": reply})
+
+if __name__ == "__main__":
+    app.run(port=5000)
 ```
-your-extension-folder/
-├── manifest.json
-├── popup.html
-└── popup.js
+
+---
+
+## 📄 License & Usage
+
+```txt
+© 2025 Basil CK. All rights reserved.
+
+This version is provided for learning and demonstration purposes only.
+Do not reuse, redistribute, or modify the code without explicit permission.
 ```
-
-*Note: The server must remain running for the extension to work.*
-```
-
-Key features of this README:
-1. Uses simple emoji-based troubleshooting
-2. Provides multiple ways to test the functionality
-3. Clear visual hierarchy with bold headers
-4. Includes both extension and non-extension methods
-5. Shows the required file structure
-6. All instructions fit on one screen without scrolling
-
-Would you like me to add any specific details about your particular file structure or configuration?
