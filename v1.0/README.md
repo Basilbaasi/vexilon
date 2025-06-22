@@ -6,7 +6,7 @@ A local AI assistant that runs in Chrome/Edge using your Flask backend.
 
 ### 1. Start the AI Server
 ```bash
-python app.py
+python server.py //in py folder
 ```
 *Keep this terminal window open - the server must stay running.*
 
