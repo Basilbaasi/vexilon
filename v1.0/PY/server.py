@@ -1,50 +1,62 @@
+import os
+import json
+import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from dotenv import load_dotenv
 
-from openai import OpenAI
+load_dotenv()
 
-#need python 3.11
-# run C:/Users/basil/AppData/Local/Programs/Python/Python311/Scripts/pip.exe install -r requirements.txt
-#  C:/Users/basil/AppData/Local/Programs/Python/Python311/Scripts/pip.exe install pyaudio   
-# ctrl+shift+p,select python:select interpriter 3.11
-
-# Initialize text-to-speech engine
-
-
-# Initialize OpenAI client
-client = OpenAI(
-    base_url = "https://integrate.api.nvidia.com/v1",
-    api_key = "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"
-    # impala003@driftz.net
-    # ichukunju123
-)
+API_KEY = os.getenv("API_KEY")
+BASE_URL = os.getenv("BASE_URL")
 
 app = Flask(__name__)
-CORS(app)  # Allow cross-origin from extension
+CORS(app)
+
+def call_model(question):
+    invoke_url = f"{BASE_URL}/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Accept": "text/event-stream"
+    }
+
+    payload = {
+        "model": "google/gemma-3n-e4b-it",
+        "messages": [{"role": "user", "content": question}],
+        "max_tokens": 512,
+        "temperature": 0.2,
+        "top_p": 0.7,
+        "stream": True
+    }
+
+    response = requests.post(invoke_url, headers=headers, json=payload, stream=True)
+    response_text = ""
+
+    try:
+        for line in response.iter_lines():
+            if line:
+                decoded = line.decode("utf-8")
+                if decoded.startswith("data: "):
+                    content = decoded.removeprefix("data: ").strip()
+                    if content != "[DONE]":
+                        data = json.loads(content)
+                        delta = data.get("choices", [{}])[0].get("delta", {})
+                        if "content" in delta:
+                            response_text += delta["content"]
+    except Exception as e:
+        print("Streaming error:", e)
+        return "Sorry, error while generating response."
+
+    return response_text.replace("*", " ")
 
 @app.route("/process", methods=["POST"])
 def process():
+    print("✅ Flask received request to /process")
     data = request.get_json()
     message = data.get("message", "")
-    completion = client.chat.completions.create(
-            model="deepseek-ai/deepseek-r1-0528",
-            messages=[{"role":"user","content":message}],
-            temperature=0.6,
-            top_p=0.7,
-            max_tokens=4096,
-            stream=True
-    )
-    response_text = ""
-        
-        # Stream and accumulate each chunk of the response
-    for chunk in completion:
-        delta = chunk.choices[0].delta
-        # Ignore reasoning_content completely
-        if isinstance(delta.content, str):
-            response_text += delta.content
-
-    response_text = response_text.replace("*", " ")
     print("Received:", message)
+    response_text = call_model(message)
     return jsonify({"response": f"Vexilon: {response_text}"})
 
-app.run(port=5000)
+if __name__ == "__main__":
+    app.run(port=5000)
