@@ -105,7 +105,6 @@ document.getElementById("chat-send").addEventListener("click", async () => {
 
   try {
     const response = await fetch("http://127.0.0.1:5000/process", {
-
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -113,13 +112,30 @@ document.getElementById("chat-send").addEventListener("click", async () => {
       body: JSON.stringify({ message }),
     });
 
-    const data = await response.json();
-    addMessage(data.response || "❌ No response from server", "bot");
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+
+    let botMsg = "";
+    const botMsgEl = document.createElement("div");
+    botMsgEl.style.margin = "5px 0";
+    botMsgEl.style.whiteSpace = "pre-wrap";
+    botMsgEl.textContent = "🤖 ";
+    document.getElementById("chat-messages").appendChild(botMsgEl);
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      botMsg += chunk;
+      botMsgEl.textContent = "🤖 " + botMsg;
+      document.getElementById("chat-messages").scrollTop = 9999;
+    }
   } catch (err) {
-    console.error(err);
+    console.error("❌ Fetch error:", err);
     addMessage("❌ Error talking to Python server.", "bot");
   }
 });
+
 
 // Optional: handle Enter key
 document.getElementById("chat-text").addEventListener("keydown", (e) => {
