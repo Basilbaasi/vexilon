@@ -1,8 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Vexilon",
-  "description": "A smart assistant with a floating chat UI.",
   "version": "1.0",
+  "description": "Floating AI assistant",
+  "permissions": ["scripting", "tabs", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -11,11 +16,16 @@
       "128": "icon.png"
     }
   },
-  "permissions": ["http://localhost:5000/", "activeTab", "scripting"],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
@@ -23,10 +33,5 @@
       "resources": ["icon.png"],
       "matches": ["<all_urls>"]
     }
-  ],
-  "icons": {
-    "16": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
-  }
+  ]
 }
