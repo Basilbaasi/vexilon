@@ -1,4 +1,6 @@
+
 // Remove existing if already injected
+
 if (document.getElementById("chat-box")) {
   document.getElementById("chat-box").remove();
 }
@@ -20,24 +22,73 @@ chatBox.innerHTML = `
 `;
 document.body.appendChild(chatBox);
 
-// Styles
+function makeResizable(el) {
+  const resizers = ['top', 'right', 'bottom', 'left'];
+
+  resizers.forEach(side => {
+    const resizer = document.createElement('div');
+    resizer.className = `resizer resizer-${side}`;
+    el.appendChild(resizer);
+
+    resizer.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      document.body.style.userSelect = 'none';
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startWidth = parseInt(document.defaultView.getComputedStyle(el).width, 10);
+      const startHeight = parseInt(document.defaultView.getComputedStyle(el).height, 10);
+      const startTop = el.getBoundingClientRect().top;
+      const startLeft = el.getBoundingClientRect().left;
+
+      function doDrag(e) {
+        if (side === 'right') {
+          el.style.width = `${startWidth + e.clientX - startX}px`;
+        } else if (side === 'bottom') {
+          el.style.height = `${startHeight + e.clientY - startY}px`;
+        } else if (side === 'left') {
+          el.style.width = `${startWidth - (e.clientX - startX)}px`;
+          el.style.left = `${startLeft + (e.clientX - startX)}px`;
+        } else if (side === 'top') {
+          el.style.height = `${startHeight - (e.clientY - startY)}px`;
+          el.style.top = `${startTop + (e.clientY - startY)}px`;
+        }
+      }
+
+      function stopDrag() {
+        document.removeEventListener('mousemove', doDrag);
+        document.removeEventListener('mouseup', stopDrag);
+        document.body.style.userSelect = '';
+      }
+
+      document.addEventListener('mousemove', doDrag);
+      document.addEventListener('mouseup', stopDrag);
+    });
+  });
+}
+
+makeResizable(chatBox);
+
+
+// Add styles
 const style = document.createElement("style");
 style.textContent = `
 #chat-box {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 300px;
-  max-height: 400px;
+  width: 32Oops. Hello. What is the? Vertices. In Michelin. In Michelle. How it works? Loan. Yeah. I should have gone there. No. Play. English. In the. Hello. Sedan. I. Right. 0px;
+  height: 400px;
   background: #1e1e1e;
   color: white;
   font-family: sans-serif;
   border-radius: 10px;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   z-index: 99999;
   box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  resize: both;
+  overflow: hidden;
 }
 
 #chat-header {
@@ -81,17 +132,61 @@ style.textContent = `
 #chat-send:hover {
   background: #45a049;
 }
+
+.resizer {
+  position: absolute;
+  background: transparent;
+  z-index: 1000;
+}
+
+.resizer-top {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  cursor: ns-resize;
+}
+.resizer-right {
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 100%;
+  cursor: ew-resize;
+}
+.resizer-bottom {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  cursor: ns-resize;
+}
+.resizer-left {
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
 `;
 document.head.appendChild(style);
 
-// Add messages to chat
+// Scroll-aware message add
 function addMessage(text, from = "user") {
+  const container = document.getElementById("chat-messages");
+
+  const isAtBottom =
+    Math.abs(container.scrollHeight - container.scrollTop - container.clientHeight) < 10;
+
   const msg = document.createElement("div");
   msg.style.margin = "5px 0";
   msg.style.whiteSpace = "pre-wrap";
   msg.textContent = `${from === "user" ? "🧑" : "🤖"} ${text}`;
-  document.getElementById("chat-messages").appendChild(msg);
-  document.getElementById("chat-messages").scrollTop = 9999;
+  container.appendChild(msg);
+
+  if (isAtBottom) {
+    container.scrollTop = container.scrollHeight;
+  }
 }
 
 // Handle send
@@ -115,27 +210,46 @@ document.getElementById("chat-send").addEventListener("click", async () => {
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
 
+    const container = document.getElementById("chat-messages");
+
+    // Create and append bot message
     let botMsg = "";
     const botMsgEl = document.createElement("div");
     botMsgEl.style.margin = "5px 0";
     botMsgEl.style.whiteSpace = "pre-wrap";
     botMsgEl.textContent = "🤖 ";
-    document.getElementById("chat-messages").appendChild(botMsgEl);
+    container.appendChild(botMsgEl);
+
+    // Detect if user is at bottom before streaming
+    const userWasAtBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight < 10;
+
+    let userScrolledUp = false;
+    const scrollHandler = () => {
+      userScrolledUp =
+        container.scrollHeight - container.scrollTop - container.clientHeight > 50;
+    };
+    container.addEventListener("scroll", scrollHandler);
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+
       const chunk = decoder.decode(value, { stream: true });
       botMsg += chunk;
       botMsgEl.textContent = "🤖 " + botMsg;
-      document.getElementById("chat-messages").scrollTop = 9999;
+
+      if (userWasAtBottom && !userScrolledUp) {
+        container.scrollTop = container.scrollHeight;
+      }
     }
+
+    container.removeEventListener("scroll", scrollHandler);
   } catch (err) {
     console.error("❌ Fetch error:", err);
     addMessage("❌ Error talking to Python server.", "bot");
   }
 });
-
 
 // Optional: handle Enter key
 document.getElementById("chat-text").addEventListener("keydown", (e) => {
