@@ -3,6 +3,16 @@ if (document.getElementById("chat-box")) {
   document.getElementById("chat-box").remove();
 }
 
+// Inject marked.js
+const markedScript = document.createElement("script");
+markedScript.src = "https://cdn.jsdelivr.net/npm/marked/marked.min.js";
+document.head.appendChild(markedScript);
+
+// Inject DOMPurify
+const purifyScript = document.createElement("script");
+purifyScript.src = "https://cdn.jsdelivr.net/npm/dompurify@3.0.3/dist/purify.min.js";
+document.head.appendChild(purifyScript);
+
 // Create chat box
 const iconURL = chrome.runtime.getURL("icon.png");
 const chatBox = document.createElement("div");
@@ -24,7 +34,7 @@ chrome.runtime.sendMessage({ type: "get-chat" }, (history) => {
   (history || []).forEach(msg => addMessage(msg.text, msg.from));
 });
 
-// Add resizable borders
+// Make chat resizable
 function makeResizable(el) {
   ['top', 'right', 'bottom', 'left'].forEach(side => {
     const resizer = document.createElement('div');
@@ -65,7 +75,7 @@ function makeResizable(el) {
 }
 makeResizable(chatBox);
 
-// Add styles
+// Chat styles
 const style = document.createElement("style");
 style.textContent = `
   #chat-box {
@@ -129,16 +139,41 @@ style.textContent = `
   .resizer-right { top: 0; right: 0; width: 5px; height: 100%; cursor: ew-resize; }
   .resizer-bottom { bottom: 0; left: 0; width: 100%; height: 5px; cursor: ns-resize; }
   .resizer-left { top: 0; left: 0; width: 5px; height: 100%; cursor: ew-resize; }
+
+  #chat-messages code {
+    background: #333;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+  #chat-messages strong {
+    color: #ffd700;
+  }
+  #chat-messages em {
+    font-style: italic;
+    color: #ccc;
+  }
+  #chat-messages ul, #chat-messages ol {
+    margin: 0;
+    padding-left: 20px;
+  }
 `;
 document.head.appendChild(style);
 
-// Add message to UI
+// Add message to UI (user or bot)
 function addMessage(text, from = "user") {
   const container = document.getElementById("chat-messages");
   const msg = document.createElement("div");
-  msg.textContent = `${from === "user" ? "🧑" : "🤖"} ${text}`;
   msg.style.margin = "5px 0";
   msg.style.whiteSpace = "pre-wrap";
+
+  if (from === "bot" && window.marked) {
+    const parsed = marked.parse(text);
+    msg.innerHTML = "🤖 " + (window.DOMPurify ? DOMPurify.sanitize(parsed) : parsed);
+  } else {
+    msg.textContent = `${from === "user" ? "🧑" : "🤖"} ${text}`;
+  }
+
   container.appendChild(msg);
   container.scrollTop = container.scrollHeight;
 }
@@ -163,7 +198,6 @@ document.getElementById("chat-send").addEventListener("click", async () => {
     let botText = "";
     const container = document.getElementById("chat-messages");
     const botMsgEl = document.createElement("div");
-    botMsgEl.textContent = "🤖 ";
     botMsgEl.style.margin = "5px 0";
     botMsgEl.style.whiteSpace = "pre-wrap";
     container.appendChild(botMsgEl);
@@ -171,10 +205,23 @@ document.getElementById("chat-send").addEventListener("click", async () => {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+
       const chunk = decoder.decode(value);
       botText += chunk;
-      botMsgEl.textContent = "🤖 " + botText;
-      container.scrollTop = container.scrollHeight;
+
+      // Only scroll if user is near bottom
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+
+      if (window.marked) {
+        const html = marked.parse(botText);
+        botMsgEl.innerHTML = "🤖 " + (window.DOMPurify ? DOMPurify.sanitize(html) : html);
+      } else {
+        botMsgEl.textContent = "🤖 " + botText;
+      }
+
+      if (isAtBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
     }
 
     // Save to memory
@@ -197,7 +244,7 @@ document.getElementById("chat-text").addEventListener("keydown", (e) => {
   if (e.key === "Enter") document.getElementById("chat-send").click();
 });
 
-// Drag feature
+// Drag chat
 let isDragging = false;
 let offsetX = 0;
 let offsetY = 0;
