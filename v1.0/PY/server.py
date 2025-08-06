@@ -4,6 +4,7 @@ import requests
 import json
 from dotenv import load_dotenv
 from flask_cors import CORS
+import re
 
 load_dotenv()
 app = Flask(__name__)
@@ -29,7 +30,9 @@ def call_model(question):
     }
 
     try:
+        buffer = ""
         response = requests.post(invoke_url, headers=headers, json=payload, stream=True)
+        
         for line in response.iter_lines():
             if line:
                 decoded = line.decode("utf-8")
@@ -39,11 +42,45 @@ def call_model(question):
                         data = json.loads(content)
                         delta = data.get("choices", [{}])[0].get("delta", {})
                         if "content" in delta:
-                            for word in delta["content"].split():
-                                yield word + " "
+                            buffer += delta["content"]
+                            
+                            # Process complete lines first
+                            while "\n" in buffer:
+                                line_part, buffer = buffer.split("\n", 1)
+                                yield line_part.strip() + "\n"
+                            
+                            # Process special patterns that shouldn't be split
+                            patterns = [
+                                (r'^\d+\.\s\*\*.+?\*\*:', 0),  # Numbered list items
+                                (r'^-\s\*\*.+?\*\*:', 0),      # Bullet list items
+                                (r'^\*\*.+?\*\*:', 0),         # Bold headers
+                                (r'`[^`]+`', 0),               # Code blocks
+                            ]
+                            
+                            for pattern, lookahead in patterns:
+                                match = re.search(pattern, buffer)
+                                if match:
+                                    # Yield any text before the match
+                                    if match.start() > 0:
+                                        yield buffer[:match.start()]
+                                    # Yield the complete pattern
+                                    yield buffer[match.start():match.end()+lookahead]
+                                    buffer = buffer[match.end()+lookahead:]
+                                    break
+                            
+        # Flush remaining buffer
+        if buffer.strip():
+            yield buffer.strip()
+            
+    except json.JSONDecodeError as e:
+        print("JSON decode error:", e)
+        yield "\n❌ Error parsing response data."
+    except requests.RequestException as e:
+        print("Request error:", e)
+        yield "\n❌ Connection error while generating response."
     except Exception as e:
-        print("Streaming error:", e)
-        yield "❌ Error while generating response."
+        print("Unexpected error:", e)
+        yield "\n❌ Error while generating response."
 
 @app.route("/process", methods=["POST"])
 def process():
