@@ -1,19 +1,19 @@
-// Remove existing if already injected
+// Remove existing chat box if already injected
 if (document.getElementById("chat-box")) {
   document.getElementById("chat-box").remove();
 }
 
-// Inject marked.js
+// Inject marked.js (Markdown parser)
 const markedScript = document.createElement("script");
 markedScript.src = "https://cdn.jsdelivr.net/npm/marked/marked.min.js";
 document.head.appendChild(markedScript);
 
-// Inject DOMPurify
+// Inject DOMPurify (HTML sanitizer)
 const purifyScript = document.createElement("script");
 purifyScript.src = "https://cdn.jsdelivr.net/npm/dompurify@3.0.3/dist/purify.min.js";
 document.head.appendChild(purifyScript);
 
-// Create chat box
+// Create chat box UI
 const iconURL = chrome.runtime.getURL("icon.png");
 const chatBox = document.createElement("div");
 chatBox.id = "chat-box";
@@ -29,12 +29,7 @@ chatBox.innerHTML = `
 `;
 document.body.appendChild(chatBox);
 
-// Add memory support
-chrome.runtime.sendMessage({ type: "get-chat" }, (history) => {
-  (history || []).forEach(msg => addMessage(msg.text, msg.from));
-});
-
-// Make chat resizable
+// Make chat resizable and draggable
 function makeResizable(el) {
   ['top', 'right', 'bottom', 'left'].forEach(side => {
     const resizer = document.createElement('div');
@@ -140,51 +135,126 @@ style.textContent = `
   .resizer-bottom { bottom: 0; left: 0; width: 100%; height: 5px; cursor: ns-resize; }
   .resizer-left { top: 0; left: 0; width: 5px; height: 100%; cursor: ew-resize; }
 
+  /* Markdown styling */
   #chat-messages code {
     background: #333;
     padding: 2px 4px;
     border-radius: 4px;
     font-family: monospace;
   }
+  #chat-messages pre {
+    background: #333;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+  }
   #chat-messages strong {
+    font-weight: bold;
     color: #ffd700;
   }
   #chat-messages em {
     font-style: italic;
     color: #ccc;
   }
+  #chat-messages h1, #chat-messages h2, #chat-messages h3 {
+    margin: 10px 0;
+    color: #ffd700;
+  }
+  #chat-messages h1 { font-size: 1.4em; }
+  #chat-messages h2 { font-size: 1.2em; }
+  #chat-messages h3 { font-size: 1.1em; }
   #chat-messages ul, #chat-messages ol {
     margin: 0;
     padding-left: 20px;
   }
+  #chat-messages a {
+    color: #4caf50;
+    text-decoration: none;
+  }
+  #chat-messages a:hover {
+    text-decoration: underline;
+  }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: inline-block;
+  }
+  .typing-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #ccc;
+    margin: 0 2px;
+    animation: typingAnimation 1.4s infinite ease-in-out;
+  }
+  .typing-dot:nth-child(1) { animation-delay: 0s; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingAnimation {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+  }
 `;
 document.head.appendChild(style);
 
-// Add message to UI (user or bot)
+// Load chat history
+chrome.runtime.sendMessage({ type: "get-chat" }, (history) => {
+  (history || []).forEach(msg => addMessage(msg.text, msg.from));
+});
+
+// Safe Markdown parsing with fallback
+function safeMarkedParse(text) {
+  try {
+    return window.marked ? marked.parse(text) : text.replace(/\n/g, "<br>");
+  } catch (e) {
+    console.error("Markdown parsing error:", e);
+    return text.replace(/\n/g, "<br>");
+  }
+}
+
+// Add message to chat
 function addMessage(text, from = "user") {
   const container = document.getElementById("chat-messages");
   const msg = document.createElement("div");
   msg.style.margin = "5px 0";
   msg.style.whiteSpace = "pre-wrap";
 
-  if (from === "bot" && window.marked) {
-    const parsed = marked.parse(text);
-    msg.innerHTML = "🤖 " + (window.DOMPurify ? DOMPurify.sanitize(parsed) : parsed);
+  if (from === "bot") {
+    const sanitized = window.DOMPurify ? DOMPurify.sanitize(safeMarkedParse(text)) : safeMarkedParse(text);
+    msg.innerHTML = `🤖 ${sanitized}`;
   } else {
-    msg.textContent = `${from === "user" ? "🧑" : "🤖"} ${text}`;
+    msg.textContent = `🧑 ${text}`;
   }
 
   container.appendChild(msg);
   container.scrollTop = container.scrollHeight;
 }
 
-// Send message
+// Typing indicator
+function showTypingIndicator() {
+  const container = document.getElementById("chat-messages");
+  const indicator = document.createElement("div");
+  indicator.className = "typing-indicator";
+  indicator.innerHTML = `
+    🤖 <span class="typing-dot"></span>
+    <span class="typing-dot"></span>
+    <span class="typing-dot"></span>
+  `;
+  container.appendChild(indicator);
+  container.scrollTop = container.scrollHeight;
+  return indicator;
+}
+
+// Send message to backend
 document.getElementById("chat-send").addEventListener("click", async () => {
   const input = document.getElementById("chat-text");
   const userText = input.value.trim();
   if (!userText) return;
   input.value = "";
   addMessage(userText, "user");
+
+  const typingIndicator = showTypingIndicator();
 
   try {
     const res = await fetch("http://127.0.0.1:5000/process", {
@@ -193,10 +263,14 @@ document.getElementById("chat-send").addEventListener("click", async () => {
       body: JSON.stringify({ message: userText })
     });
 
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
     const reader = res.body.getReader();
     const decoder = new TextDecoder("utf-8");
     let botText = "";
     const container = document.getElementById("chat-messages");
+    typingIndicator.remove();
+
     const botMsgEl = document.createElement("div");
     botMsgEl.style.margin = "5px 0";
     botMsgEl.style.whiteSpace = "pre-wrap";
@@ -212,19 +286,16 @@ document.getElementById("chat-send").addEventListener("click", async () => {
       // Only scroll if user is near bottom
       const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
 
-      if (window.marked) {
-        const html = marked.parse(botText);
-        botMsgEl.innerHTML = "🤖 " + (window.DOMPurify ? DOMPurify.sanitize(html) : html);
-      } else {
-        botMsgEl.textContent = "🤖 " + botText;
-      }
+      // Update only the new part for efficiency
+      const sanitized = window.DOMPurify ? DOMPurify.sanitize(safeMarkedParse(chunk)) : safeMarkedParse(chunk);
+      botMsgEl.innerHTML += sanitized;
 
       if (isAtBottom) {
         container.scrollTop = container.scrollHeight;
       }
     }
 
-    // Save to memory
+    // Save to chat history
     chrome.runtime.sendMessage({
       type: "append-chat",
       data: [
@@ -235,6 +306,7 @@ document.getElementById("chat-send").addEventListener("click", async () => {
 
   } catch (err) {
     console.error("Bot error:", err);
+    typingIndicator.remove();
     addMessage("❌ Error talking to server", "bot");
   }
 });
@@ -244,7 +316,7 @@ document.getElementById("chat-text").addEventListener("keydown", (e) => {
   if (e.key === "Enter") document.getElementById("chat-send").click();
 });
 
-// Drag chat
+// Drag chat window
 let isDragging = false;
 let offsetX = 0;
 let offsetY = 0;

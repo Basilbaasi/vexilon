@@ -13,6 +13,10 @@ CORS(app)
 API_KEY = os.getenv("API_KEY")
 BASE_URL = os.getenv("BASE_URL")
 
+import re
+import json
+import requests
+
 def call_model(question):
     invoke_url = f"{BASE_URL}/chat/completions"
     headers = {
@@ -44,43 +48,55 @@ def call_model(question):
                         if "content" in delta:
                             buffer += delta["content"]
                             
-                            # Process complete lines first
-                            while "\n" in buffer:
-                                line_part, buffer = buffer.split("\n", 1)
-                                yield line_part.strip() + "\n"
+                            # Process for formatted streaming
+                            formatted_chunk, remaining_buffer = process_buffer(buffer)
+                            if formatted_chunk:
+                                yield formatted_chunk
+                                buffer = remaining_buffer
                             
-                            # Process special patterns that shouldn't be split
-                            patterns = [
-                                (r'^\d+\.\s\*\*.+?\*\*:', 0),  # Numbered list items
-                                (r'^-\s\*\*.+?\*\*:', 0),      # Bullet list items
-                                (r'^\*\*.+?\*\*:', 0),         # Bold headers
-                                (r'`[^`]+`', 0),               # Code blocks
-                            ]
-                            
-                            for pattern, lookahead in patterns:
-                                match = re.search(pattern, buffer)
-                                if match:
-                                    # Yield any text before the match
-                                    if match.start() > 0:
-                                        yield buffer[:match.start()]
-                                    # Yield the complete pattern
-                                    yield buffer[match.start():match.end()+lookahead]
-                                    buffer = buffer[match.end()+lookahead:]
-                                    break
-                            
-        # Flush remaining buffer
+        # Flush remaining content
         if buffer.strip():
-            yield buffer.strip()
+            formatted_chunk, _ = process_buffer(buffer.strip())
+            yield formatted_chunk
             
     except json.JSONDecodeError as e:
-        print("JSON decode error:", e)
-        yield "\n❌ Error parsing response data."
+        yield "❌ Error parsing response data."
     except requests.RequestException as e:
-        print("Request error:", e)
-        yield "\n❌ Connection error while generating response."
+        yield "❌ Connection error while generating response."
     except Exception as e:
-        print("Unexpected error:", e)
-        yield "\n❌ Error while generating response."
+        yield "❌ Error while generating response."
+
+def process_buffer(buffer):
+    """
+    Processes buffer to preserve formatting and stream naturally.
+    Returns: (formatted_chunk, remaining_buffer)
+    """
+    # Priority 1: Complete Markdown elements
+    markdown_patterns = [
+        (r'(^#+\s.+?)(?=\n|$)', re.MULTILINE),     # Headers (##, ###)
+        (r'(\*\*.+?\*\*)', 0),                      # **bold**
+        (r'(\*.+?\*)', 0),                           # *italics*
+        (r'(`[^`]+`)', 0),                           # `code`
+        (r'(^\d+\.\s.+?)(?=\n|$)', re.MULTILINE),    # Numbered lists
+        (r'(^-\s.+?)(?=\n|$)', re.MULTILINE),        # Bullet points
+    ]
+
+    for pattern, flags in markdown_patterns:
+        match = re.search(pattern, buffer, flags)
+        if match:
+            start, end = match.span()
+            if start == 0:  # Pattern at start of buffer
+                return match.group(1), buffer[end:]
+    
+    # Priority 2: Natural language breaks
+    split_chars = ('\n', '. ', '! ', '? ', ', ', '; ', ' ')
+    for char in split_chars:
+        if char in buffer:
+            pos = buffer.find(char) + len(char)
+            return buffer[:pos], buffer[pos:]
+    
+    # Default: Return entire buffer if no split point found
+    return "", buffer
 
 @app.route("/process", methods=["POST"])
 def process():
