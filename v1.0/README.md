@@ -1,4 +1,5 @@
-Vexilon – v1 (Gemma API-based Chrome Assistant)
+# Vexilon – v1 (Gemma API-based Chrome Assistant)
+
 This is version v1 of the Vexilon project. It connects a Chrome extension to a remote AI backend powered by Google's Gemma model, served through a custom Flask API compatible with OpenAI’s format.
 
 🧠 Features
