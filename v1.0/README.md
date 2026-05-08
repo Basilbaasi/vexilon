@@ -1,55 +1,163 @@
-# Vexilon – v1 (Gemma API-based Chrome Assistant)
+# Vexilon – AI Browser Assistant Platform (v1)
 
-This is version v1 of the Vexilon project. It connects a Chrome extension to a remote AI backend powered by Google's Gemma model, served through a custom Flask API compatible with OpenAI’s format.
+Vexilon is an AI-powered browser assistant that integrates conversational AI directly into the browsing experience using a lightweight Chrome extension and a custom backend inference server.
 
-🧠 Features
-🌐 Uses Gemma model via API for LLM responses
+Version `v1` establishes the foundational architecture for:
+- browser-native AI interaction
+- API-driven LLM orchestration
+- conversational workflows
+- scalable assistant infrastructure
 
-🧩 Chrome extension for lightweight user interaction
+The system connects a Chrome extension frontend with a Flask backend that communicates with Google's Gemma model through an OpenAI-compatible API structure.
 
-🔁 Flask backend handles /process requests in OpenAI-style format
+---
 
+# Features
 
-📁 Folder Structure
-bash
-Copy
-Edit
+## AI Browser Assistant
+- Conversational AI inside Chrome
+- Lightweight popup-based interaction
+- Fast prompt-response workflow
+
+## Gemma API Integration
+- Google Gemma model support
+- OpenAI-style API request formatting
+- Modular backend inference handling
+
+## Backend API Server
+- Flask-powered API backend
+- `/process` endpoint for prompt handling
+- JSON-based communication pipeline
+
+## Modular Architecture
+- Decoupled frontend/backend structure
+- Easily extensible for future upgrades
+- Organized project workflow
+
+## Chrome Extension Support
+- Popup UI interaction
+- Browser-integrated assistant workflow
+- Simple and lightweight deployment
+
+---
+
+# System Architecture
+
+```text
+Chrome Extension UI
+        ↓
+popup.js / content.js
+        ↓
+Flask Backend Server
+        ↓
+Gemma API Endpoint
+        ↓
+LLM Response Processing
+        ↓
+Extension UI Rendering
+```
+
+---
+
+# Tech Stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | Chrome Extension APIs, JavaScript, HTML, CSS |
+| Backend | Python, Flask |
+| AI Layer | Google Gemma API |
+| Environment | dotenv |
+| Communication | REST API, JSON |
+
+---
+
+# Project Structure
+
+```bash
 v1/
 ├── PY/
-│   └── server.py          # Flask backend using Gemma API
-│   └── test.py            # Test script
+│   ├── server.py          # Flask backend using Gemma API
+│   └── test.py            # Backend/API testing script
+│
 ├── content.js             # Extension content script
-├── icon.png               # Icon for extension
-├── manifest.json          # Chrome extension config
-├── popup.html             # Popup chat UI
-├── popup.js               # UI event and request logic
-├── styles.css             # Basic styling
-├── requirements.txt       # Python packages
-└── README.md              # Project documentation
-🚀 How to Use
-🖥️ 1. Run Flask Backend
-Install dependencies and start the server:
+├── popup.html             # Popup interface
+├── popup.js               # UI logic and API requests
+├── styles.css             # Styling
+├── manifest.json          # Chrome extension configuration
+├── icon.png               # Extension icon
+├── requirements.txt       # Python dependencies
+└── README.md              # Documentation
+```
 
-bash
-Copy
-Edit
+---
+
+# Setup Guide
+
+## 1. Clone Repository
+
+```bash
+git clone https://github.com/Basilbaasi/vexilon.git
+cd vexilon/v1
+```
+
+---
+
+## 2. Install Dependencies
+
+```bash
 pip install -r requirements.txt
+```
+
+---
+
+## 3. Configure Environment Variables
+
+Create a `.env` file inside the project directory:
+
+```ini
+GEMMA_API_URL=https://your-gemma-endpoint.com/v1/chat
+GEMMA_API_KEY=your_api_key_here
+```
+
+---
+
+## 4. Run Flask Backend
+
+```bash
 python PY/server.py
-Ensure your .env file is set up properly with your Gemma API URL and key/token, if required.
+```
 
-🌐 2. Load Chrome Extension
-Go to chrome://extensions/
+Default server:
 
-Enable Developer Mode
+```text
+http://localhost:5000
+```
 
-Click Load unpacked
+---
 
-Select the v1/ folder
+## 5. Load Chrome Extension
 
-🧪 Example: Flask API Server (server.py)
-python
-Copy
-Edit
+1. Open:
+
+```text
+chrome://extensions/
+```
+
+2. Enable **Developer Mode**
+
+3. Click:
+
+```text
+Load unpacked
+```
+
+4. Select the `v1/` folder
+
+---
+
+# Example Backend Endpoint
+
+```python
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
@@ -57,22 +165,28 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
 app = Flask(__name__)
 CORS(app)
 
-GEMMA_API_URL = os.getenv("GEMMA_API_URL")  # Example: "https://your-gemma-api-endpoint.com/v1/chat"
-API_KEY = os.getenv("GEMMA_API_KEY")        # Optional if needed
+GEMMA_API_URL = os.getenv("GEMMA_API_URL")
+API_KEY = os.getenv("GEMMA_API_KEY")
 
 @app.route("/process", methods=["POST"])
 def process():
     data = request.get_json()
     user_input = data.get("message", "")
 
-    # Construct request payload for Gemma
     payload = {
         "messages": [
-            {"role": "system", "content": "You are Jarvis, a helpful assistant."},
-            {"role": "user", "content": user_input}
+            {
+                "role": "system",
+                "content": "You are Jarvis, a helpful assistant."
+            },
+            {
+                "role": "user",
+                "content": user_input
+            }
         ]
     }
 
@@ -82,8 +196,14 @@ def process():
     }
 
     try:
-        response = requests.post(GEMMA_API_URL, json=payload, headers=headers)
+        response = requests.post(
+            GEMMA_API_URL,
+            json=payload,
+            headers=headers
+        )
+
         gemma_reply = response.json()["choices"][0]["message"]["content"]
+
     except Exception as e:
         gemma_reply = f"Error talking to Gemma: {str(e)}"
 
@@ -91,17 +211,60 @@ def process():
 
 if __name__ == "__main__":
     app.run(port=5000)
-🔐 .env Setup (Required)
-ini
-Copy
-Edit
-GEMMA_API_URL=https://your-gemma-endpoint.com/v1/chat
-GEMMA_API_KEY=your_api_key_here  # Optional depending on deployment
-📄 License & Usage
-txt
-Copy
-Edit
-© 2025 Basil CK. All rights reserved.
+```
 
-This version is for learning and demonstration purposes only.
-Do not reuse, redistribute, or deploy commercially without explicit permission.
+---
+
+# Current Limitations (v1)
+
+- No persistent database memory
+- No authentication system
+- Single-model architecture
+- No WebSocket streaming
+- Minimal UI system
+- No containerization
+- No deployment pipeline
+
+---
+
+# Planned Upgrades
+
+## V2 Roadmap
+- Dedicated React frontend
+- FastAPI backend migration
+- WebSocket streaming
+- PostgreSQL integration
+- Docker support
+- Redis caching
+- Authentication system
+- Multi-model support
+- File upload + RAG pipeline
+- Voice interaction
+- CI/CD automation
+
+---
+
+# Long-Term Vision
+
+Vexilon is being developed toward a scalable AI workspace platform focused on:
+- browser-native AI workflows
+- real-time assistant systems
+- modular LLM infrastructure
+- productivity augmentation
+- deployable AI tooling
+
+The long-term objective is building a production-grade AI assistant ecosystem that combines:
+- conversational intelligence
+- browser interaction
+- contextual workflows
+- scalable backend services
+
+---
+
+# License
+
+Copyright © 2026 Basil CK
+
+This project is intended for educational, research, and portfolio purposes only.
+
+Commercial usage, redistribution, or deployment without explicit permission is prohibited.
