@@ -1,15 +1,30 @@
-# Vexilon – AI Assistant Ecosystem
+# Vexilon – AI Browser Assistant Ecosystem
 
-Vexilon is a browser-native AI assistant platform focused on integrating conversational intelligence directly into user workflows.
+Vexilon is an evolving AI assistant platform designed to integrate conversational intelligence directly into browser workflows through modular backend systems, local AI infrastructure, and scalable assistant architectures.
 
-The project is being developed as a scalable AI workspace ecosystem combining:
-- browser-integrated AI interaction
-- local and cloud-based LLM support
-- modular backend infrastructure
-- real-time conversational systems
-- deployable AI engineering workflows
+The project explores both:
+- cloud-based AI inference workflows
+- fully local offline AI execution
 
-Vexilon currently contains multiple development versions representing the evolution of the platform architecture.
+while progressively evolving toward a production-grade AI workspace platform.
+
+---
+
+# Project Vision
+
+Vexilon is being engineered as:
+- a browser-native AI assistant
+- a local + cloud AI orchestration platform
+- a scalable conversational workspace
+- an extensible AI infrastructure project
+
+The long-term objective is building a deployable AI ecosystem that combines:
+- conversational intelligence
+- browser integration
+- workflow augmentation
+- real-time AI communication
+- modular inference routing
+- production-ready backend engineering
 
 ---
 
@@ -18,34 +33,32 @@ Vexilon currently contains multiple development versions representing the evolut
 ```bash
 vexilon/
 │
-├── screenshots/                 # Project screenshots and demo images
+├── screenshots/                  # Project screenshots and demo previews
 │
-├── v1.0/                        # Gemma API-based Chrome assistant
+├── v1.0/                         # Gemma API-based cloud assistant
 │   ├── README.md
 │   └── ...
 │
-├── v2/                          # Local LLM-powered architecture (upcoming)
+├── v2/                           # Ollama-powered local AI assistant
 │   ├── README.md
 │   └── ...
 │
-└── README.md                    # Main repository documentation
+└── README.md                     # Main repository documentation
 ```
 
 ---
 
-# Project Versions
+# V1.0 – Gemma API-Based Assistant
 
-# V1.0 – Gemma API-Based Chrome Assistant
-
-V1 focuses on the foundational architecture for browser-native AI interaction.
+V1 focuses on browser-native AI interaction using a cloud-hosted LLM workflow powered through the Gemma API.
 
 ## Core Features
-- Chrome extension-based AI assistant
+- Chrome extension AI assistant
 - Flask backend server
 - Google Gemma API integration
-- OpenAI-compatible API workflow
-- Lightweight conversational interface
-- Modular backend/frontend structure
+- OpenAI-style API workflow
+- Lightweight conversational UI
+- Modular extension architecture
 
 ## Architecture
 
@@ -56,82 +69,142 @@ Flask Backend
        ↓
 Gemma API
        ↓
-LLM Responses
+AI Response Processing
 ```
 
 ## Technology Stack
 - Python
 - Flask
 - JavaScript
-- Chrome Extension APIs
 - HTML/CSS
+- Chrome Extension APIs
 - REST APIs
 - dotenv
 
 ## Purpose
-This version establishes the initial AI orchestration workflow and browser interaction pipeline.
+This version establishes the initial conversational AI orchestration pipeline and browser assistant workflow.
 
 ---
 
-# V2 – Local AI Workspace Platform (In Development)
+# V2 – Ollama-Powered Local AI Assistant
 
-V2 represents the transition from a lightweight browser assistant into a production-grade AI workspace platform.
+V2 transitions Vexilon toward local AI infrastructure using Ollama and locally hosted language models.
 
-This version focuses on:
-- dedicated frontend architecture
-- local LLM execution
-- scalable backend services
-- real-time streaming
-- persistent memory systems
-- production deployment workflows
+This version enables:
+- fully offline AI execution
+- local inference workflows
+- model flexibility
+- streaming conversational interaction
 
-## Planned Features
-- Dedicated React frontend
-- FastAPI backend
-- Local LLM integration
-- WebSocket streaming
-- PostgreSQL chat persistence
-- Redis caching
-- Docker containerization
-- CI/CD automation
-- Authentication system
-- File upload + RAG pipeline
-- Multi-model routing
-- Voice interaction support
+without requiring cloud API dependency.
 
-## Planned Architecture
+## Core Features
+- Local AI execution with Ollama
+- Offline conversational assistant
+- Support for models like:
+  - llama3
+  - mistral
+  - gemma
+- Flask backend with OpenAI-compatible schema
+- Chrome extension assistant UI
+- Streaming response workflow
+- Persistent conversational context
+
+## Architecture
 
 ```text
-React Frontend
+Chrome Extension
        ↓
-FastAPI Backend
+Flask Backend
        ↓
-LLM Service Layer
+Ollama Local API
        ↓
-Local Models / Cloud Models
+Local LLM Models
        ↓
-Persistent Storage
+Streaming Responses
 ```
 
-## Target Goal
-V2 is being engineered as a scalable AI assistant infrastructure platform capable of supporting:
-- browser-native productivity workflows
-- AI copilots
-- contextual memory systems
-- deployable local AI systems
-- production-ready inference pipelines
+## Technology Stack
+- Python
+- Flask
+- Ollama
+- OpenAI Python SDK
+- JavaScript
+- Chrome Extension APIs
+- HTML/CSS
+
+## Purpose
+This version focuses on local AI deployment, offline inference systems, and scalable assistant experimentation using self-hosted language models.
 
 ---
 
 # Screenshots
 
-Project screenshots and previews can be found inside:
+Project screenshots and demo previews can be placed inside:
 
 ```bash
 /screenshots
 ```
 
-# Setup Instructions
+---
+
+# Development Roadmap
+
+## Upcoming Engineering Goals
+- Dedicated React frontend
+- FastAPI migration
+- WebSocket streaming
+- PostgreSQL persistence
+- Redis caching
+- Docker containerization
+- Authentication system
+- CI/CD automation
+- File upload + RAG support
+- Multi-model orchestration
+- Voice interaction
+- Real-time browser context awareness
+
+---
+
+# Long-Term Direction
+
+Vexilon is evolving from:
+> a lightweight Chrome assistant
+
+toward:
+> a production-grade AI workspace ecosystem
+
+The platform is intended to explore:
+- browser-native AI systems
+- local inference infrastructure
+- scalable backend engineering
+- conversational workflow orchestration
+- deployable AI tooling
+
+---
+
+# Why This Project Exists
+
+The goal of Vexilon is not just creating another chatbot.
+
+It is an engineering-focused exploration into:
+- AI infrastructure
+- deployment workflows
+- local LLM systems
+- browser-based AI interaction
+- scalable assistant architectures
+
+while building production-oriented software engineering skills around:
+- backend systems
+- deployment
+- streaming communication
+- modular architecture
+- DevOps workflows
+- AI application engineering
+
+---
+
+# Setup
 
 ## Clone Repository
 
@@ -140,35 +213,11 @@ git clone https://github.com/Basilbaasi/vexilon.git
 cd vexilon
 ```
 
----
+Refer to the version-specific README files inside:
+- `v1.0/README.md`
+- `v2/README.md`
 
-# Current Development Focus
-
-The current engineering roadmap includes:
-- dedicated frontend migration
-- backend scalability improvements
-- streaming infrastructure
-- local LLM integration
-- deployment automation
-- production architecture refinement
-
----
-
-# Long-Term Vision
-
-Vexilon is being developed toward a modular AI operating environment capable of integrating:
-- conversational intelligence
-- browser interaction
-- productivity tooling
-- workflow automation
-- local and cloud AI orchestration
-
-The objective is to build a deployable AI ecosystem that combines:
-- scalable backend systems
-- AI infrastructure engineering
-- browser-native user interaction
-- real-time conversational workflows
-- production-ready deployment practices
+for detailed setup instructions.
 
 ---
 
@@ -178,4 +227,4 @@ Copyright © 2026 Basil CK
 
 This repository is intended for educational, research, and portfolio purposes only.
 
-Commercial usage, redistribution, or deployment without explicit permission is prohibited.
+Commercial usage, redistribution, modification, or deployment without explicit permission is prohibited.
